@@ -5,6 +5,7 @@ import pyautogui
 
 from .config import Config
 from .logger import logger
+import pygetwindow
 
 
 def date_formatted(format="%Y-%m-%d %H:%M:%S"):
@@ -83,3 +84,23 @@ def do_with_timeout(function, args = [], kwargs = {}, time_beteween: float = 0.5
 
 def now():
     return time.time()
+
+
+def closeMetamaskWindow():
+    try:
+        title = 'MetaMask Notification'
+        time.sleep(1)
+        windows = pygetwindow.getWindowsWithTitle(title)
+        for window in windows:
+            window.close()
+    except:
+        print('error for close metamask window')
+
+
+def maximizeMetamaskNotification():
+    title = 'MetaMask Notification'
+    time.sleep(3)
+    windows = pygetwindow.getWindowsWithTitle(title)
+    if len(windows) > 0:
+        current_window = windows[0]
+        current_window.activate()

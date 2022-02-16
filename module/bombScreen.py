@@ -1,3 +1,4 @@
+import time
 from enum import Enum
 
 
@@ -162,7 +163,9 @@ class Login:
     def do_login(manager):
         current_screen = BombScreen.get_current_screen()
         logged = False
-        
+
+        closeMetamaskWindow()
+
         if current_screen != BombScreenEnum.LOGIN.value and current_screen != BombScreenEnum.NOT_FOUND.value and current_screen != BombScreenEnum.POPUP_ERROR.value:
             logged = True
 
@@ -184,6 +187,8 @@ class Login:
                     refresh_page()
                     continue
 
+                maximizeMetamaskNotification()
+
                 logger_translated("sigin wallet", LoggerEnum.BUTTON_CLICK)
                 if not click_when_target_appears("button_connect_wallet_sign"):
                     refresh_page()
@@ -202,9 +207,15 @@ class Login:
 
 
 class Hero:
-    def who_needs_work(manager):
+
+    xtime = None
+    hero_quantity_at_home = 0
+
+    def who_needs_work(manager, xtime):
+
+        Hero.xtime = xtime
+
         logger_translated(f"Heroes to work", LoggerEnum.ACTION)
-             
         heroes_bar = [
             "hero_bar_0", "hero_bar_10", "hero_bar_20",
             "hero_bar_30", "hero_bar_40", "hero_bar_50",
@@ -217,53 +228,92 @@ class Hero:
 
         scale_factor = 10
 
-        BombScreen.go_to_home(manager)
-        BombScreen.go_to_heroes(manager)
-        
-        def click_available_heroes():
-            n_clicks = 0
-            screen_img = Image.screen()
-            
-            buttons_position = Image.get_target_positions("button_work_unchecked", not_target="button_work_checked", screen_image=screen_img)
-            logger(f"👁️  Found {len(buttons_position)} Heroes resting:")
-            
-            if not buttons_position:
-                return 0
+        if xtime == 1:
+            BombScreen.go_to_home(manager)
+            BombScreen.go_to_heroes(manager)
+            Hero.hero_quantity_at_home = 0
+        if xtime == 2 or xtime == 3:
+            BombScreen.go_to_heroes(manager)
 
-            x_buttons = buttons_position[0][0]
-            height, width = Image.TARGETS["hero_search_area"].shape[:2]
-            screen_img = screen_img[:,x_buttons-width:x_buttons, :]
-            logger("↳", end=" ", datetime=False)
-            for button_position in buttons_position:
-                x,y,w,h = button_position
-                search_img = screen_img[y:y+height, :, :]
-
-                rarity_max_values = [Image.get_compare_result(search_img, Image.TARGETS[rarity]).max() for rarity in heroes_rarity]
-                rarity_index, rarity_max_value= 0, 0
-                for i, value in enumerate(rarity_max_values):
-                    rarity_index, rarity_max_value = (i, value) if value > rarity_max_value else (rarity_index, rarity_max_value)
-
-                hero_rarity = heroes_rarity[rarity_index].split("_")[-1]
-                logger(f"{hero_rarity}:", end=" ", datetime=False)
-
-                life_max_values = [Image.get_compare_result(search_img, Image.TARGETS[bar]).max() for bar in heroes_bar]
-                life_index, life_max_value= 0, 0
-                for i, value in enumerate(life_max_values):
-                    life_index, life_max_value = (i, value) if value >= life_max_value else (life_index, life_max_value)
+        if xtime == 1:
+            logger("Vai clicar no all amarelo")
+            click_when_target_appears("all_yellow", timeout=2)
+            logger("Vai clicar no all verde")
+            click_when_target_appears("all_green", timeout=3)
+            time.sleep(2)
+            logger("Fim clique botoes")
 
 
-                logger(f"{life_index*scale_factor}%", end=" ", datetime=False)
-                if life_index*scale_factor >= Config.get('heroes_work_mod', hero_rarity):
-                    click_randomly_in_position(x,y,w,h)
-                    n_clicks += 1
-                    logger("💪;", end=" ",datetime=False)
-                else:
-                    logger("💤;", end=" ", datetime=False)
+        def click_available_heroes(page_number):
+
+            hero_mod = 'heroes_home_' + str(xtime)
+
+            while (True):
+                screen_img = Image.screen()
+
+                buttons_position = Image.get_target_positions("button_home_unchecked", screen_image=screen_img)
+
+                logger("Pagina atual " + str(page_number))
+
+                logger(f"👁️  Quantidade botoes Home habilitados - {len(buttons_position)}")
+
+                if not buttons_position:
+                    return Hero.hero_quantity_at_home
+
+                if Hero.hero_quantity_at_home == Config.get('house', 'hero_quantity'):
+                    logger("Casa cheia")
+                    return Hero.hero_quantity_at_home
+
+                x_buttons = buttons_position[0][0]
+                height, width = Image.TARGETS["hero_search_area"].shape[:2]
+                screen_img = screen_img[:,x_buttons-width:x_buttons, :]
+                logger("↳", end=" ", datetime=False)
+
+                need_print = False
+                for index, button_position in enumerate(buttons_position):
+
+                    if not need_print:
+                        if page_number == 2:
+                            if index >= len(buttons_position) - Hero.hero_quantity_at_home:
+                                logger("CHEGOU NO FINAL ANTES DA CASA")
+                                return Hero.hero_quantity_at_home
+
+                        if Hero.hero_quantity_at_home == Config.get('house', 'hero_quantity'):
+                            logger("Casa cheia")
+                            return Hero.hero_quantity_at_home
+
+                        x,y,w,h = button_position
+                        search_img = screen_img[y:y+height, :, :]
+
+                        rarity_max_values = [Image.get_compare_result(search_img, Image.TARGETS[rarity]).max() for rarity in heroes_rarity]
+                        rarity_index, rarity_max_value= 0, 0
+                        for i, value in enumerate(rarity_max_values):
+                            rarity_index, rarity_max_value = (i, value) if value > rarity_max_value else (rarity_index, rarity_max_value)
+
+                        hero_rarity = heroes_rarity[rarity_index].split("_")[-1]
+
+                        life_max_values = [Image.get_compare_result(search_img, Image.TARGETS[bar]).max() for bar in heroes_bar]
+                        life_index, life_max_value= 0, 0
+                        for i, value in enumerate(life_max_values):
+                            life_index, life_max_value = (i, value) if value >= life_max_value else (life_index, life_max_value)
+
+                        if Config.get(hero_mod, hero_rarity) >= 0 and  life_index*scale_factor <= Config.get(hero_mod, hero_rarity):
+                            click_randomly_in_position(x,y,w,h)
+
+                            Hero.hero_quantity_at_home += 1
+                            logger(f"💤; Adicionado - {hero_rarity}")
+                            need_print = True
+                            time.sleep(1)
+                        else:
+                            #logger(f"💪; Trabalhando - {hero_rarity}")
+                            pass
+                if not need_print:
+                    break
 
             logger("", datetime=False)
-            return n_clicks
+            return Hero.hero_quantity_at_home
 
-        n_clicks_per_scrool = scroll_and_click_on_targets(
+        scroll_and_click_on_targets(
             safe_scroll_target="hero_bar_vertical",
             repeat=Config.get('screen','scroll_heroes', 'repeat'),
             distance=Config.get('screen','scroll_heroes', 'distance'),
@@ -271,11 +321,22 @@ class Hero:
             wait=Config.get('screen','scroll_heroes', 'wait'),
             function_between=click_available_heroes
         )
-        
-        logger(f"🏃 {sum(n_clicks_per_scrool)} new heros sent to explode everything 💣💣💣.")
-        Hero.refresh_hunt(manager)
+
         manager.set_refresh_timer("refresh_heroes")
-        return True
+
+        if Hero.xtime == 1 or Hero.xtime == 2:
+            logger(f"🏃 time {Hero.xtime} - {Hero.hero_quantity_at_home} new heros sent to explode everything 💣💣💣.")
+
+            if Hero.hero_quantity_at_home == Config.get('house', 'hero_quantity'):
+                Hero.refresh_hunt(manager)
+            else:
+                BombScreen.go_to_home(manager)
+        else:
+            logger(f"🏃 Second time - {Hero.hero_quantity_at_home} new heros sent to explode everything 💣💣💣.")
+            Hero.refresh_hunt(manager)
+
+
+        return Hero.hero_quantity_at_home
 
     def refresh_hunt(manager):
         logger_translated("hunting positions", LoggerEnum.TIMER_REFRESH)
@@ -284,6 +345,8 @@ class Hero:
         BombScreen.go_to_treasure_hunt(manager)
 
         manager.set_refresh_timer("refresh_hunt")
+
+        logger("End hunting positions")
         return True
     
     def do_check_error(manager):        

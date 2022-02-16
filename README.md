@@ -1,3 +1,6 @@
+# Bot modificado especificamente para funcionar com uma casa 
+
+
 # Bombcrypto Bot [Family JOW]
 Bot desenvolvido em python, 100% do código é aberto, para aqueles que tenham conhecimento validarem que não existe nenhum código malicioso, o bot apenas trabalha com reconhecimento de imagens para poder gerenciar as interações na tela do bombcrypto, compatível com Windows e Linux.
 O bot em constante atualização, e para que ele continue 100% free, não deixei de realizar sua contribuição, isso nos motiva a continuar!
