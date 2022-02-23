@@ -20,7 +20,8 @@ class BombScreenEnum(Enum):
     TREASURE_HUNT = 3
     CHEST = 4
     POPUP_ERROR = 5
-    SETTINGS = 6
+    SETTINGS = 6,
+    METAMASK_CONNECT = 7
 
 
 class BombScreen:
@@ -67,6 +68,7 @@ class BombScreen:
             BombScreenEnum.CHEST.value: Image.TARGETS["identify_hunt_chest"],
             BombScreenEnum.POPUP_ERROR.value: Image.TARGETS["popup_erro"],
             BombScreenEnum.SETTINGS.value: Image.TARGETS["identify_settings"],
+            BombScreenEnum.METAMASK_CONNECT.value: Image.TARGETS["metamask_connect"],
         }
         max_value = 0
         img = Image.screen()
@@ -166,7 +168,10 @@ class Login:
 
         closeMetamaskWindow()
 
-        if current_screen != BombScreenEnum.LOGIN.value and current_screen != BombScreenEnum.NOT_FOUND.value and current_screen != BombScreenEnum.POPUP_ERROR.value:
+        if current_screen != BombScreenEnum.LOGIN.value and \
+                current_screen != BombScreenEnum.NOT_FOUND.value and \
+                current_screen != BombScreenEnum.POPUP_ERROR.value and \
+                current_screen != BombScreenEnum.METAMASK_CONNECT.value:
             logged = True
 
         if not logged:
@@ -184,6 +189,10 @@ class Login:
 
                 logger_translated("wallet", LoggerEnum.BUTTON_CLICK)
                 if not click_when_target_appears("button_connect_wallet"):
+                    refresh_page()
+                    continue
+
+                if not click_when_target_appears("metamask_connect"):
                     refresh_page()
                     continue
 
